@@ -27,9 +27,14 @@ export interface Game {
 interface GameCardProps {
   game: Game;
   onPlaceWager: (gameId: string, betType: string, amount: number) => void;
+  isPlacingWager?: boolean;
 }
 
-export default function GameCard({ game, onPlaceWager }: GameCardProps) {
+export default function GameCard({
+  game,
+  onPlaceWager,
+  isPlacingWager = false,
+}: GameCardProps) {
   const [wagerAmount, setWagerAmount] = useState<string>("");
   const [selectedBet, setSelectedBet] = useState<string>("");
 
@@ -146,11 +151,17 @@ export default function GameCard({ game, onPlaceWager }: GameCardProps) {
         <button
           onClick={handlePlaceWager}
           disabled={
-            !selectedBet || !wagerAmount || parseFloat(wagerAmount) <= 0
+            !selectedBet ||
+            !wagerAmount ||
+            parseFloat(wagerAmount) <= 0 ||
+            isPlacingWager
           }
-          className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
-          Place Bet
+          {isPlacingWager && (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          )}
+          {isPlacingWager ? "Placing..." : "Place Bet"}
         </button>
       </div>
 

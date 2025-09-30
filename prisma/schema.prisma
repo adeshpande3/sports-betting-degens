@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  displayName String
+  // keep balance simple for now; ints in cents
+  balanceCents Int     @default(10000) // $100.00 to start
+  wagers      Wager[]
+  createdAt   DateTime @default(now())
+}
+
+model League {
+  id    String  @id @default(uuid())
+  name  String
+  events Event[]
+}
+
+model Event {
+  id        String   @id @default(uuid())
+  leagueId  String
+  league    League   @relation(fields: [leagueId], references: [id])
+  homeTeam  String
+  awayTeam  String
+  startsAt  DateTime
+  status    EventStatus @default(SCHEDULED)
+  markets   Market[]
+}
+
+enum EventStatus {
+  SCHEDULED
+  LIVE
+  FINAL
+}
+
+model Market {
+  id       String  @id @default(uuid())
+  eventId  String
+  event    Event   @relation(fields: [eventId], references: [id])
+  type     MarketType
+  lines    Line[]
+}
+
+enum MarketType {
+  MONEYLINE
+  SPREAD
+  TOTAL
+}
+
+model Line {
+  id           String    @id @default(uuid())
+  marketId     String
+  market       Market    @relation(fields: [marketId], references: [id])
+  selectionKey Selection // HOME|AWAY|OVER|UNDER
+  point        Decimal?  // for SPREAD/TOTAL
+  price        Int       // American odds, e.g. -110, +120
+  source       String
+  capturedAt   DateTime  @default(now())
+  wagers       Wager[]
+}
+
+enum Selection {
+  HOME
+  AWAY
+  OVER
+  UNDER
+}
+
+model Wager {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  lineId        String
+  line          Line     @relation(fields: [lineId], references: [id])
+  stakeCents    Int
+  acceptedPoint Decimal?
+  acceptedPrice Int
+  placedAt      DateTime @default(now())
+  status        WagerStatus @default(PENDING)
+}
+
+enum WagerStatus {
+  PENDING
+  WON
+  LOST
+  PUSH
+  VOID
+}
