@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import UserSelector from "@/components/UserSelector";
+import { User } from "@/types/user";
 
 export interface Game {
   id: string;
@@ -26,17 +28,27 @@ export interface Game {
 
 interface GameCardProps {
   game: Game;
-  onPlaceWager: (gameId: string, betType: string, amount: number) => void;
+  users: User[];
+  onPlaceWager: (
+    gameId: string,
+    betType: string,
+    amount: number,
+    userId: string
+  ) => void;
   isPlacingWager?: boolean;
 }
 
 export default function GameCard({
   game,
+  users,
   onPlaceWager,
   isPlacingWager = false,
 }: GameCardProps) {
   const [wagerAmount, setWagerAmount] = useState<string>("");
   const [selectedBet, setSelectedBet] = useState<string>("");
+  const [selectedUserId, setSelectedUserId] = useState<string>(
+    users.length > 0 ? users[0].id : ""
+  );
 
   const formatOdds = (odds: number): string => {
     return odds > 0 ? `+${odds}` : odds.toString();
@@ -52,8 +64,8 @@ export default function GameCard({
 
   const handlePlaceWager = () => {
     const amount = parseFloat(wagerAmount);
-    if (selectedBet && amount > 0) {
-      onPlaceWager(game.id, selectedBet, amount);
+    if (selectedBet && amount > 0 && selectedUserId) {
+      onPlaceWager(game.id, selectedBet, amount, selectedUserId);
       setWagerAmount("");
       setSelectedBet("");
     }
@@ -127,10 +139,9 @@ export default function GameCard({
           </button>
         ))}
       </div>
-
       {/* Wager Input */}
       <div className="flex gap-2 items-end">
-        <div className="flex-1">
+        <div className="w-64">
           <label
             htmlFor={`wager-${game.id}`}
             className="block text-sm font-medium text-gray-700 mb-1"
@@ -148,12 +159,20 @@ export default function GameCard({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
+        <div className="flex-1">
+          <UserSelector
+            users={users}
+            selectedUserId={selectedUserId}
+            onUserSelect={setSelectedUserId}
+          />
+        </div>
         <button
           onClick={handlePlaceWager}
           disabled={
             !selectedBet ||
             !wagerAmount ||
             parseFloat(wagerAmount) <= 0 ||
+            !selectedUserId ||
             isPlacingWager
           }
           className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"

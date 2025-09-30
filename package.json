@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "odds:sync": "node scripts/test-odds-sync.js",
+    "odds:test": "node scripts/test-odds-sync.js americanfootball_nfl"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

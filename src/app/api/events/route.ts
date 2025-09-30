@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
               orderBy: {
                 capturedAt: "desc",
               },
-              take: 1, // Get the most recent line for each market
+              take: 2,
             },
           },
         },
