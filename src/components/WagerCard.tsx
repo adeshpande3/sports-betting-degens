@@ -108,6 +108,12 @@ export default function WagerCard({
     }
   };
 
+  const isEventStarted = (): boolean => {
+    const currentTime = new Date();
+    const eventStartTime = new Date(wager.event.startsAt);
+    return currentTime >= eventStartTime;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow">
       <div className="flex items-center justify-between gap-4">
@@ -172,7 +178,17 @@ export default function WagerCard({
                 {onMarkWin && (
                   <button
                     onClick={() => onMarkWin(wager.id)}
-                    className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors"
+                    disabled={!isEventStarted()}
+                    className={`px-3 py-1 text-white text-sm font-medium rounded transition-colors ${
+                      isEventStarted()
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "bg-gray-400 cursor-not-allowed"
+                    }`}
+                    title={
+                      !isEventStarted()
+                        ? "Event hasn't started yet"
+                        : "Mark as Win"
+                    }
                   >
                     Win
                   </button>
@@ -180,7 +196,17 @@ export default function WagerCard({
                 {onMarkLoss && (
                   <button
                     onClick={() => onMarkLoss(wager.id)}
-                    className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+                    disabled={!isEventStarted()}
+                    className={`px-3 py-1 text-white text-sm font-medium rounded transition-colors ${
+                      isEventStarted()
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-gray-400 cursor-not-allowed"
+                    }`}
+                    title={
+                      !isEventStarted()
+                        ? "Event hasn't started yet"
+                        : "Mark as Loss"
+                    }
                   >
                     Loss
                   </button>
@@ -216,10 +242,22 @@ export default function WagerCard({
                           {onMarkPush && (
                             <button
                               onClick={() => {
-                                onMarkPush(wager.id);
-                                setIsDropdownOpen(false);
+                                if (isEventStarted()) {
+                                  onMarkPush(wager.id);
+                                  setIsDropdownOpen(false);
+                                }
                               }}
-                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                              disabled={!isEventStarted()}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                                isEventStarted()
+                                  ? "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                  : "text-gray-400 cursor-not-allowed"
+                              }`}
+                              title={
+                                !isEventStarted()
+                                  ? "Event hasn't started yet"
+                                  : "Mark as Push"
+                              }
                             >
                               Push
                             </button>
@@ -227,10 +265,22 @@ export default function WagerCard({
                           {onMarkVoid && (
                             <button
                               onClick={() => {
-                                onMarkVoid(wager.id);
-                                setIsDropdownOpen(false);
+                                if (isEventStarted()) {
+                                  onMarkVoid(wager.id);
+                                  setIsDropdownOpen(false);
+                                }
                               }}
-                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                              disabled={!isEventStarted()}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                                isEventStarted()
+                                  ? "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                  : "text-gray-400 cursor-not-allowed"
+                              }`}
+                              title={
+                                !isEventStarted()
+                                  ? "Event hasn't started yet"
+                                  : "Mark as Void"
+                              }
                             >
                               Void
                             </button>
