@@ -1,12 +1,22 @@
+// app/lib/db.ts
 import { PrismaClient } from "@prisma/client";
 
-// Avoid creating multiple instances in dev
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+// Use a pooled URL at runtime if provided (e.g., Neon/Supabase pooler).
+// Fall back to DATABASE_URL for local and migrations.
+const RUNTIME_DB_URL =
+  process.env.DATABASE_URL_RUNTIME || process.env.DATABASE_URL;
+
+// Keep a single client instance in dev to avoid "too many clients" hot-reload issues.
+const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
 export const prisma =
-  globalForPrisma.prisma ||
+  globalForPrisma.prisma ??
   new PrismaClient({
-    log: ["query", "error", "warn"],
+    datasources: RUNTIME_DB_URL ? { db: { url: RUNTIME_DB_URL } } : undefined,
+    log:
+      process.env.NODE_ENV === "production"
+        ? ["error", "warn"]
+        : ["query", "error", "warn"],
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
