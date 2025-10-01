@@ -56,7 +56,10 @@ export default function GameCard({
   };
 
   const formatTime = (timeString: string): string => {
-    return new Date(timeString).toLocaleTimeString("en-US", {
+    return new Date(timeString).toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
       hour: "numeric",
       minute: "2-digit",
       hour12: true,

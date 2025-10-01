@@ -21,6 +21,12 @@ export async function GET(request: NextRequest) {
       whereClause.leagueId = leagueId;
     }
 
+    // Filter out events that have started or are starting within 15 minutes
+    const fifteenMinutesFromNow = new Date(Date.now() + 15 * 60 * 1000);
+    whereClause.startsAt = {
+      gte: fifteenMinutesFromNow,
+    };
+
     // Fetch events from database with all related data
     const events = await prisma.event.findMany({
       where: whereClause,
