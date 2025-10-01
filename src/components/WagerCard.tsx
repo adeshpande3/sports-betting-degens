@@ -114,9 +114,254 @@ export default function WagerCard({
     return currentTime >= eventStartTime;
   };
 
+  // Helper function to render Win button
+  const renderWinButton = (isMobile: boolean = false) => {
+    if (!onMarkWin) return null;
+
+    const buttonClasses = isMobile
+      ? "px-2 py-1 text-white text-xs font-medium rounded transition-colors"
+      : "px-3 py-1 text-white text-sm font-medium rounded transition-colors";
+
+    return (
+      <button
+        onClick={() => onMarkWin(wager.id)}
+        disabled={!isEventStarted()}
+        className={`${buttonClasses} ${
+          isEventStarted()
+            ? "bg-green-600 hover:bg-green-700"
+            : "bg-gray-400 cursor-not-allowed"
+        }`}
+        title={!isEventStarted() ? "Event hasn't started yet" : "Mark as Win"}
+      >
+        Win
+      </button>
+    );
+  };
+
+  // Helper function to render Loss button
+  const renderLossButton = (isMobile: boolean = false) => {
+    if (!onMarkLoss) return null;
+
+    const buttonClasses = isMobile
+      ? "px-2 py-1 text-white text-xs font-medium rounded transition-colors"
+      : "px-3 py-1 text-white text-sm font-medium rounded transition-colors";
+
+    return (
+      <button
+        onClick={() => onMarkLoss(wager.id)}
+        disabled={!isEventStarted()}
+        className={`${buttonClasses} ${
+          isEventStarted()
+            ? "bg-red-600 hover:bg-red-700"
+            : "bg-gray-400 cursor-not-allowed"
+        }`}
+        title={!isEventStarted() ? "Event hasn't started yet" : "Mark as Loss"}
+      >
+        Loss
+      </button>
+    );
+  };
+
+  // Helper function to render dropdown menu items
+  const renderDropdownItems = (isMobile: boolean = false) => {
+    const itemClasses = isMobile
+      ? "w-full text-left px-2 py-1 text-xs transition-colors"
+      : "w-full text-left px-3 py-2 text-sm transition-colors";
+
+    const cancelClasses = isMobile
+      ? "w-full text-left px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 transition-colors"
+      : "w-full text-left px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors";
+
+    return (
+      <>
+        {onMarkPush && (
+          <button
+            onClick={() => {
+              if (isEventStarted()) {
+                onMarkPush(wager.id);
+                setIsDropdownOpen(false);
+              }
+            }}
+            disabled={!isEventStarted()}
+            className={`${itemClasses} ${
+              isEventStarted()
+                ? "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                : "text-gray-400 cursor-not-allowed"
+            }`}
+            title={
+              !isEventStarted() ? "Event hasn't started yet" : "Mark as Push"
+            }
+          >
+            Push
+          </button>
+        )}
+        {onMarkVoid && (
+          <button
+            onClick={() => {
+              if (isEventStarted()) {
+                onMarkVoid(wager.id);
+                setIsDropdownOpen(false);
+              }
+            }}
+            disabled={!isEventStarted()}
+            className={`${itemClasses} ${
+              isEventStarted()
+                ? "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                : "text-gray-400 cursor-not-allowed"
+            }`}
+            title={
+              !isEventStarted() ? "Event hasn't started yet" : "Mark as Void"
+            }
+          >
+            Void
+          </button>
+        )}
+        {onCancel && (
+          <button
+            onClick={() => {
+              onCancel(wager.id);
+              setIsDropdownOpen(false);
+            }}
+            className={cancelClasses}
+          >
+            Cancel
+          </button>
+        )}
+      </>
+    );
+  };
+
+  // Helper function to render More dropdown button
+  const renderMoreDropdown = (isMobile: boolean = false) => {
+    if (!onMarkPush && !onMarkVoid && !onCancel) return null;
+
+    const buttonClasses = isMobile
+      ? "px-2 py-1 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 transition-colors flex items-center gap-1"
+      : "px-3 py-1 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors flex items-center gap-1";
+
+    const iconClasses = isMobile ? "w-3 h-3" : "w-4 h-4";
+    const dropdownClasses = isMobile ? "w-20" : "w-24";
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className={buttonClasses}
+        >
+          More
+          <svg
+            className={`${iconClasses} transition-transform ${
+              isDropdownOpen ? "rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        {isDropdownOpen && (
+          <div
+            className={`absolute right-0 mt-1 ${dropdownClasses} bg-white border border-gray-200 rounded-md shadow-lg z-10`}
+          >
+            <div className="py-1">{renderDropdownItems(isMobile)}</div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Helper function to render all action buttons
+  const renderActionButtons = (isMobile: boolean = false) => {
+    if (
+      wager.status !== "PENDING" ||
+      (!onMarkWin && !onMarkLoss && !onMarkPush && !onMarkVoid && !onCancel)
+    ) {
+      return null;
+    }
+
+    const containerClasses = isMobile ? "flex gap-1" : "flex gap-2";
+
+    return (
+      <div className={containerClasses}>
+        {renderWinButton(isMobile)}
+        {renderLossButton(isMobile)}
+        {renderMoreDropdown(isMobile)}
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-      <div className="flex items-center justify-between gap-4">
+      {/* Mobile Layout (vertical) */}
+      <div className="block md:hidden">
+        {/* Header - Game Info and Status */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div className="text-base font-semibold text-gray-900 leading-tight">
+              <div>{wager.event.awayTeam}</div>
+              <div>@ {wager.event.homeTeam}</div>
+            </div>
+          </div>
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${getStatusColor(
+              wager.status
+            )}`}
+          >
+            {wager.status}
+          </span>
+        </div>
+
+        {/* Bet Details - Grid Layout */}
+        <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+          <div className="text-center bg-gray-50 p-2 rounded">
+            <p className="text-gray-600 text-xs mb-1">
+              {getMarketTypeDisplay()}
+            </p>
+            <p className="font-medium text-sm">{getSelectionText()}</p>
+          </div>
+          <div className="text-center bg-gray-50 p-2 rounded">
+            <p className="text-gray-600 text-xs mb-1">Odds</p>
+            <p className="font-medium text-sm">
+              {formatOdds(wager.acceptedPrice)}
+            </p>
+          </div>
+          <div className="text-center bg-gray-50 p-2 rounded">
+            <p className="text-gray-600 text-xs mb-1">Stake</p>
+            <p className="font-medium text-sm">
+              {formatCurrency(wager.stakeCents)}
+            </p>
+          </div>
+          <div className="text-center bg-gray-50 p-2 rounded">
+            <p className="text-gray-600 text-xs mb-1">Potential</p>
+            <p className="font-medium text-sm text-green-600">
+              {formatCurrency(wager.potentialPayoutCents)}
+            </p>
+          </div>
+        </div>
+
+        {/* User Info and Actions */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm">
+            <p className="text-gray-600">{wager.user.displayName}</p>
+            <p className="text-gray-500 text-xs">
+              {formatDateTime(wager.placedAt)}
+            </p>
+          </div>
+
+          {/* Action Buttons - Mobile */}
+          {renderActionButtons(true)}
+        </div>
+      </div>
+
+      {/* Desktop Layout (horizontal) */}
+      <div className="hidden md:flex items-center justify-between gap-4">
         {/* Left Section - Game Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -168,141 +413,7 @@ export default function WagerCard({
           </div>
 
           {/* Action Buttons - Only show for PENDING wagers */}
-          {wager.status === "PENDING" &&
-            (onMarkWin ||
-              onMarkLoss ||
-              onMarkPush ||
-              onMarkVoid ||
-              onCancel) && (
-              <div className="flex gap-2">
-                {onMarkWin && (
-                  <button
-                    onClick={() => onMarkWin(wager.id)}
-                    disabled={!isEventStarted()}
-                    className={`px-3 py-1 text-white text-sm font-medium rounded transition-colors ${
-                      isEventStarted()
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
-                    title={
-                      !isEventStarted()
-                        ? "Event hasn't started yet"
-                        : "Mark as Win"
-                    }
-                  >
-                    Win
-                  </button>
-                )}
-                {onMarkLoss && (
-                  <button
-                    onClick={() => onMarkLoss(wager.id)}
-                    disabled={!isEventStarted()}
-                    className={`px-3 py-1 text-white text-sm font-medium rounded transition-colors ${
-                      isEventStarted()
-                        ? "bg-red-600 hover:bg-red-700"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
-                    title={
-                      !isEventStarted()
-                        ? "Event hasn't started yet"
-                        : "Mark as Loss"
-                    }
-                  >
-                    Loss
-                  </button>
-                )}
-                {(onMarkPush || onMarkVoid || onCancel) && (
-                  <div className="relative" ref={dropdownRef}>
-                    <button
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="px-3 py-1 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors flex items-center gap-1"
-                    >
-                      More
-                      <svg
-                        className={`w-4 h-4 transition-transform ${
-                          isDropdownOpen ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {isDropdownOpen && (
-                      <div className="absolute right-0 mt-1 w-24 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                        <div className="py-1">
-                          {onMarkPush && (
-                            <button
-                              onClick={() => {
-                                if (isEventStarted()) {
-                                  onMarkPush(wager.id);
-                                  setIsDropdownOpen(false);
-                                }
-                              }}
-                              disabled={!isEventStarted()}
-                              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                                isEventStarted()
-                                  ? "text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                  : "text-gray-400 cursor-not-allowed"
-                              }`}
-                              title={
-                                !isEventStarted()
-                                  ? "Event hasn't started yet"
-                                  : "Mark as Push"
-                              }
-                            >
-                              Push
-                            </button>
-                          )}
-                          {onMarkVoid && (
-                            <button
-                              onClick={() => {
-                                if (isEventStarted()) {
-                                  onMarkVoid(wager.id);
-                                  setIsDropdownOpen(false);
-                                }
-                              }}
-                              disabled={!isEventStarted()}
-                              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                                isEventStarted()
-                                  ? "text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                  : "text-gray-400 cursor-not-allowed"
-                              }`}
-                              title={
-                                !isEventStarted()
-                                  ? "Event hasn't started yet"
-                                  : "Mark as Void"
-                              }
-                            >
-                              Void
-                            </button>
-                          )}
-                          {onCancel && (
-                            <button
-                              onClick={() => {
-                                onCancel(wager.id);
-                                setIsDropdownOpen(false);
-                              }}
-                              className="w-full text-left px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+          {renderActionButtons(false)}
         </div>
       </div>
     </div>
