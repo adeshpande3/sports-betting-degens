@@ -113,7 +113,7 @@ export default function GameCard({
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
       {/* Game Header */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 gap-4">
         <div className="text-lg font-semibold">
           <span className="text-gray-600">{game.awayTeam}</span>
           <span className="mx-2 text-gray-400">@</span>
@@ -141,49 +141,54 @@ export default function GameCard({
           </button>
         ))}
       </div>
-      {/* Wager Input */}
-      <div className="flex gap-2 items-end">
-        <div className="w-64">
-          <label
-            htmlFor={`wager-${game.id}`}
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Wager Amount ($)
-          </label>
-          <input
-            id={`wager-${game.id}`}
-            type="number"
-            value={wagerAmount}
-            onChange={(e) => setWagerAmount(e.target.value)}
-            placeholder="0.00"
-            min="0"
-            step="0.01"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div className="flex-1">
+      {/* Wager Input - Responsive Layout */}
+      <div className="flex flex-col lg:flex-row gap-2 lg:items-end">
+        {/* User Selector - Full width on mobile, part of row on desktop */}
+        <div className="w-full lg:flex-1">
           <UserSelector
             users={users}
             selectedUserId={selectedUserId}
             onUserSelect={setSelectedUserId}
           />
         </div>
-        <button
-          onClick={handlePlaceWager}
-          disabled={
-            !selectedBet ||
-            !wagerAmount ||
-            parseFloat(wagerAmount) <= 0 ||
-            !selectedUserId ||
-            isPlacingWager
-          }
-          className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-        >
-          {isPlacingWager && (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-          )}
-          {isPlacingWager ? "Placing..." : "Place Bet"}
-        </button>
+
+        {/* Wager Amount and Place Bet Button Row */}
+        <div className="flex gap-2 items-end">
+          <div className="w-32 lg:w-64">
+            <label
+              htmlFor={`wager-${game.id}`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Wager Amount ($)
+            </label>
+            <input
+              id={`wager-${game.id}`}
+              type="number"
+              value={wagerAmount}
+              onChange={(e) => setWagerAmount(e.target.value)}
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <button
+            onClick={handlePlaceWager}
+            disabled={
+              !selectedBet ||
+              !wagerAmount ||
+              parseFloat(wagerAmount) <= 0 ||
+              !selectedUserId ||
+              isPlacingWager
+            }
+            className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+          >
+            {isPlacingWager && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            )}
+            {isPlacingWager ? "Placing..." : "Place Bet"}
+          </button>
+        </div>
       </div>
 
       {/* Selected Bet Display */}

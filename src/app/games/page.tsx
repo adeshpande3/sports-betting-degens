@@ -431,11 +431,16 @@ export default function Events() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex gap-6 max-w-7xl mx-auto">
-        {/* Games Column - 75% width */}
-        <div className="flex-1">
-          {/* Sport Selection and Sync Odds */}
-          <div className="flex flex-row gap-3 items-center ml-auto">
+      <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+        {/* User Stats Column - Shows first on mobile (top), second on desktop (right) */}
+        <div className="w-full lg:w-1/4 lg:min-w-[300px] lg:order-2">
+          <UserStats />
+        </div>
+
+        {/* Games Column - Shows second on mobile (bottom), first on desktop (left) */}
+        <div className="flex-1 lg:order-1">
+          {/* Sport Selection and Sync Odds - Hidden on mobile */}
+          <div className="hidden lg:flex flex-row gap-3 items-center ml-auto">
             {/* Sport Dropdown */}
             <div>
               <select
@@ -696,11 +701,6 @@ export default function Events() {
               ))}
             </>
           )}
-        </div>
-
-        {/* User Stats Column - 25% width */}
-        <div className="w-1/4 min-w-[300px]">
-          <UserStats />
         </div>
       </div>
     </div>
