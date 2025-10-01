@@ -1,7 +1,6 @@
 // Type definitions for User entities
 export interface User {
   id: string;
-  email: string;
   displayName: string;
   balanceCents: number;
   createdAt: string;
@@ -60,4 +59,24 @@ export interface LedgerEntry {
 export interface UsersApiResponse {
   users: User[];
   count: number;
+}
+
+// Create user request type
+export interface CreateUserRequest {
+  displayName: string;
+  balanceCents?: number;
+}
+
+// Create user response type
+export interface CreateUserResponse {
+  user: {
+    id: string;
+    displayName: string;
+    balanceCents: number;
+    createdAt: string;
+    _count: {
+      wagers: number;
+    };
+  };
+  message: string;
 }

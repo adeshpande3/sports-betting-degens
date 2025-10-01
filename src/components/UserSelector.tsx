@@ -16,13 +16,13 @@ export default function UserSelector({
   className = "",
 }: UserSelectorProps) {
   return (
-    <div className={`flex gap-2 ${className}`}>
+    <div className={`flex flex-wrap gap-2 ${className}`}>
       {users.map((user) => (
         <button
           key={user.id}
           onClick={() => onUserSelect(user.id)}
           className={`
-            relative flex-1 min-w-0 px-3 py-2 rounded-lg border-2 transition-all duration-200 ease-in-out
+            relative min-w-24 px-3 py-2 rounded-lg border-2 transition-all duration-200 ease-in-out
             ${
               selectedUserId === user.id
                 ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md transform scale-105"
