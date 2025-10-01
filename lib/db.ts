@@ -17,6 +17,11 @@ export const prisma =
       process.env.NODE_ENV === "production"
         ? ["error", "warn"]
         : ["query", "error", "warn"],
+    transactionOptions: {
+      timeout: 60000, // 60 seconds default timeout
+      maxWait: 5000, // 5 seconds max wait to get a transaction
+      isolationLevel: "ReadCommitted", // More relaxed isolation for better performance
+    },
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

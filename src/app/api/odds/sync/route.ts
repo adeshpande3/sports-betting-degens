@@ -149,112 +149,166 @@ export async function POST(request: NextRequest) {
     const oddsData: OddsApiGame[] = await oddsResponse.json();
     console.log(`Received ${oddsData.length} games from Odds API`);
 
-    // Process and store the data in a transaction
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await prisma.$transaction(async (tx) => {
-      const processedEvents = [];
-      const processedLines = [];
+    // Process data in batches to avoid transaction timeouts
+    const BATCH_SIZE = 10; // Process 10 games at a time
+    const batches = [];
 
-      for (const game of oddsData) {
-        try {
-          // Find or create league
-          const league = await findOrCreateLeague(game.sport_title, tx);
+    for (let i = 0; i < oddsData.length; i += BATCH_SIZE) {
+      batches.push(oddsData.slice(i, i + BATCH_SIZE));
+    }
 
-          // Check if event already exists
-          let event = await tx.event.findFirst({
-            where: {
-              homeTeam: game.home_team,
-              awayTeam: game.away_team,
-              startsAt: new Date(game.commence_time),
-              leagueId: league.id,
-            },
-          });
+    let totalEventsCreated = 0;
+    let totalLinesCreated = 0;
+    let totalGamesProcessed = 0;
 
-          // Create event if it doesn't exist
-          if (!event) {
-            event = await tx.event.create({
-              data: {
-                leagueId: league.id,
-                homeTeam: game.home_team,
-                awayTeam: game.away_team,
-                startsAt: new Date(game.commence_time),
-                status: "SCHEDULED",
-              },
-            });
-            processedEvents.push(event);
-          }
+    // Process each batch in a separate transaction
+    for (const [batchIndex, batch] of batches.entries()) {
+      console.log(
+        `Processing batch ${batchIndex + 1}/${batches.length} (${
+          batch.length
+        } games)`
+      );
 
-          // Find the bookmaker with the most markets (most lines)
-          const bookmaker = game.bookmakers.reduce((max, curr) => {
-            const currLines = curr.markets.reduce(
-              (sum, market) => sum + (market.outcomes?.length ?? 0),
-              0
-            );
-            const maxLines = max.markets.reduce(
-              (sum, market) => sum + (market.outcomes?.length ?? 0),
-              0
-            );
-            return currLines > maxLines ? curr : max;
-          }, game.bookmakers[0]);
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const batchResult = await prisma.$transaction(
+          async (tx) => {
+            const processedEvents = [];
+            const processedLines = [];
 
-          for (const market of bookmaker.markets) {
-            const marketType = mapMarketType(market.key);
-            if (!marketType) continue;
+            for (const game of batch) {
+              try {
+                // Find or create league
+                const league = await findOrCreateLeague(game.sport_title, tx);
 
-            // Find or create market
-            let dbMarket = await tx.market.findFirst({
-              where: {
-                eventId: event.id,
-                type: marketType,
-              },
-            });
+                // Check if event already exists
+                let event = await tx.event.findFirst({
+                  where: {
+                    homeTeam: game.home_team,
+                    awayTeam: game.away_team,
+                    startsAt: new Date(game.commence_time),
+                    leagueId: league.id,
+                  },
+                });
 
-            if (!dbMarket) {
-              dbMarket = await tx.market.create({
-                data: {
-                  eventId: event.id,
-                  type: marketType,
-                },
-              });
+                // Create event if it doesn't exist
+                if (!event) {
+                  event = await tx.event.create({
+                    data: {
+                      leagueId: league.id,
+                      homeTeam: game.home_team,
+                      awayTeam: game.away_team,
+                      startsAt: new Date(game.commence_time),
+                      status: "SCHEDULED",
+                    },
+                  });
+                  processedEvents.push(event);
+                }
+
+                // Find the bookmaker with the most markets (most lines)
+                const bookmaker = game.bookmakers.reduce((max, curr) => {
+                  const currLines = curr.markets.reduce(
+                    (sum, market) => sum + (market.outcomes?.length ?? 0),
+                    0
+                  );
+                  const maxLines = max.markets.reduce(
+                    (sum, market) => sum + (market.outcomes?.length ?? 0),
+                    0
+                  );
+                  return currLines > maxLines ? curr : max;
+                }, game.bookmakers[0]);
+
+                for (const market of bookmaker.markets) {
+                  const marketType = mapMarketType(market.key);
+                  if (!marketType) continue;
+
+                  // Find or create market
+                  let dbMarket = await tx.market.findFirst({
+                    where: {
+                      eventId: event.id,
+                      type: marketType,
+                    },
+                  });
+
+                  if (!dbMarket) {
+                    dbMarket = await tx.market.create({
+                      data: {
+                        eventId: event.id,
+                        type: marketType,
+                      },
+                    });
+                  }
+
+                  // Process outcomes and create lines
+                  for (const outcome of market.outcomes) {
+                    const selectionKey = mapSelectionKey(
+                      marketType,
+                      outcome.name,
+                      game.home_team,
+                      game.away_team
+                    );
+
+                    if (!selectionKey) continue;
+
+                    // Create line
+                    const line = await tx.line.create({
+                      data: {
+                        marketId: dbMarket.id,
+                        selectionKey,
+                        point: outcome.point
+                          ? new Decimal(outcome.point)
+                          : null,
+                        price: Math.round(outcome.price), // Convert to integer for American odds
+                        source: `${bookmaker.key}:${bookmaker.title}`,
+                        capturedAt: new Date(market.last_update),
+                      },
+                    });
+                    processedLines.push(line);
+                  }
+                }
+              } catch (gameError) {
+                console.error(`Error processing game ${game.id}:`, gameError);
+                // Continue processing other games
+              }
             }
 
-            // Process outcomes and create lines
-            for (const outcome of market.outcomes) {
-              const selectionKey = mapSelectionKey(
-                marketType,
-                outcome.name,
-                game.home_team,
-                game.away_team
-              );
-
-              if (!selectionKey) continue;
-
-              // Create line
-              const line = await tx.line.create({
-                data: {
-                  marketId: dbMarket.id,
-                  selectionKey,
-                  point: outcome.point ? new Decimal(outcome.point) : null,
-                  price: Math.round(outcome.price), // Convert to integer for American odds
-                  source: `${bookmaker.key}:${bookmaker.title}`,
-                  capturedAt: new Date(market.last_update),
-                },
-              });
-              processedLines.push(line);
-            }
+            return {
+              eventsCreated: processedEvents.length,
+              linesCreated: processedLines.length,
+              gamesProcessed: batch.length,
+            };
+          },
+          {
+            timeout: 30000, // 30 seconds timeout per batch
           }
-        } catch (gameError) {
-          console.error(`Error processing game ${game.id}:`, gameError);
-          // Continue processing other games
+        );
+
+        totalEventsCreated += batchResult.eventsCreated;
+        totalLinesCreated += batchResult.linesCreated;
+        totalGamesProcessed += batchResult.gamesProcessed;
+      } catch (batchError) {
+        console.error(`Error processing batch ${batchIndex + 1}:`, batchError);
+
+        // If it's a transaction error, try to reconnect and continue
+        if (
+          batchError instanceof Error &&
+          batchError.message.includes("Transaction")
+        ) {
+          console.log(
+            "Transaction error detected, attempting to continue with next batch..."
+          );
+          await prisma.$disconnect();
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Brief pause
         }
+        // Continue with next batch
       }
+    }
 
-      return {
-        eventsCreated: processedEvents.length,
-        linesCreated: processedLines.length,
-        totalGamesProcessed: oddsData.length,
-      };
-    });
+    const result = {
+      eventsCreated: totalEventsCreated,
+      linesCreated: totalLinesCreated,
+      totalGamesProcessed,
+    };
 
     return NextResponse.json({
       success: true,
@@ -290,31 +344,36 @@ export async function GET(request: NextRequest) {
     if (includeStats) {
       // Get stats about recent data
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const stats = await prisma.$transaction(async (tx) => {
-        const totalEvents = await tx.event.count();
-        const totalLines = await tx.line.count();
-        const recentEvents = await tx.event.count({
-          where: {
-            startsAt: {
-              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Next 7 days
+      const stats = await prisma.$transaction(
+        async (tx) => {
+          const totalEvents = await tx.event.count();
+          const totalLines = await tx.line.count();
+          const recentEvents = await tx.event.count({
+            where: {
+              startsAt: {
+                gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Next 7 days
+              },
             },
-          },
-        });
-        const recentLines = await tx.line.count({
-          where: {
-            capturedAt: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+          });
+          const recentLines = await tx.line.count({
+            where: {
+              capturedAt: {
+                gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+              },
             },
-          },
-        });
+          });
 
-        return {
-          totalEvents,
-          totalLines,
-          recentEvents,
-          recentLines,
-        };
-      });
+          return {
+            totalEvents,
+            totalLines,
+            recentEvents,
+            recentLines,
+          };
+        },
+        {
+          timeout: 10000, // 10 seconds timeout for stats
+        }
+      );
 
       return NextResponse.json({
         success: true,
