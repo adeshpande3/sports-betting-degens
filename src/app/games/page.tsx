@@ -382,8 +382,6 @@ export default function Events() {
     }
   };
 
-  console.log("events state:", games);
-
   // Get unique leagues for filter dropdown
   const uniqueLeagues = Array.from(
     new Set(games.map((game) => game.leagueName))
@@ -394,6 +392,42 @@ export default function Events() {
     selectedLeague === "all"
       ? games
       : games.filter((game) => game.leagueName === selectedLeague);
+
+  // Group games by day and sort by date
+  const groupGamesByDay = (games: Game[]) => {
+    const grouped = games.reduce((acc, game) => {
+      const gameDate = new Date(game.startTime);
+      const dateKey = gameDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      if (!acc[dateKey]) {
+        acc[dateKey] = {
+          date: gameDate,
+          games: [],
+        };
+      }
+      acc[dateKey].games.push(game);
+      return acc;
+    }, {} as Record<string, { date: Date; games: Game[] }>);
+
+    // Sort groups by date and sort games within each group by start time
+    return Object.entries(grouped)
+      .sort(([, a], [, b]) => a.date.getTime() - b.date.getTime())
+      .map(([dateKey, { date, games }]) => ({
+        dateKey,
+        date,
+        games: games.sort(
+          (a, b) =>
+            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        ),
+      }));
+  };
+
+  const groupedGames = groupGamesByDay(filteredGames);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -630,20 +664,36 @@ export default function Events() {
           {/* Games List */}
           {!loading && !error && filteredGames.length > 0 && (
             <>
-              {filteredGames.map((game) => {
-                const gameKey = game.id;
-                const isPlacingAnyWager = placingWager?.startsWith(gameKey);
+              {groupedGames.map(({ dateKey, date, games: dayGames }) => (
+                <div key={dateKey} className="mb-8">
+                  {/* Day Header */}
+                  <div className="mb-4">
+                    <h2 className="text-xl font-bold text-gray-800 mb-1">
+                      {dateKey}
+                    </h2>
+                    <div className="h-0.5 bg-gradient-to-r from-gray-800 to-gray-600 rounded-full"></div>
+                  </div>
 
-                return (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    users={users}
-                    onPlaceWager={handlePlaceWager}
-                    isPlacingWager={isPlacingAnyWager}
-                  />
-                );
-              })}
+                  {/* Games for this day */}
+                  <div className="space-y-4">
+                    {dayGames.map((game) => {
+                      const gameKey = game.id;
+                      const isPlacingAnyWager =
+                        placingWager?.startsWith(gameKey);
+
+                      return (
+                        <GameCard
+                          key={game.id}
+                          game={game}
+                          users={users}
+                          onPlaceWager={handlePlaceWager}
+                          isPlacingWager={isPlacingAnyWager}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </>
           )}
         </div>
