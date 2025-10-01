@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import GameCard, { Game } from "@/components/GameCard";
 import UserStats from "@/components/UserStats";
 import UserSelector from "@/components/UserSelector";
@@ -305,10 +306,13 @@ export default function Events() {
 
       if (result.success) {
         // Show success message
-        alert(
-          `✅ Wager placed successfully!\nBet: ${betType}\nAmount: $${amount}\nWager ID: ${result.wager.id.slice(
+        toast.success(
+          `Wager placed successfully! Bet: ${betType} • Amount: $${amount} • ID: ${result.wager.id.slice(
             -8
-          )}`
+          )}`,
+          {
+            duration: 5000,
+          }
         );
 
         // Optionally refresh events to show updated odds/lines
@@ -318,8 +322,8 @@ export default function Events() {
       }
     } catch (error) {
       console.error("Error placing wager:", error);
-      alert(
-        `❌ Failed to place wager: ${
+      toast.error(
+        `Failed to place wager: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
@@ -354,13 +358,11 @@ export default function Events() {
       console.log("Sync result:", result);
 
       if (result.success) {
-        alert(
-          `✅ Sync completed!\n` +
-            `Events Created: ${result?.data?.eventsCreated}\n` +
-            `Lines Created: ${result?.data?.linesCreated}\n` +
-            `Total Games Processed: ${result?.data?.totalGamesProcessed}\n` +
-            `API Used: ${result?.data?.apiUsedRequests}\n` +
-            `API Remaining: ${result?.data?.apiRemainingRequests}`
+        toast.success(
+          `Sync completed! Events: ${result?.data?.eventsCreated} • Lines: ${result?.data?.linesCreated} • Games: ${result?.data?.totalGamesProcessed}`,
+          {
+            duration: 6000,
+          }
         );
 
         // Refresh the events list to show new data
@@ -370,8 +372,8 @@ export default function Events() {
       }
     } catch (error) {
       console.error("Error syncing odds:", error);
-      alert(
-        `❌ Failed to sync odds: ${
+      toast.error(
+        `Failed to sync odds: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
