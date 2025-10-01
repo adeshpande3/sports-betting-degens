@@ -47,9 +47,7 @@ export default function GameCard({
 }: GameCardProps) {
   const [wagerAmount, setWagerAmount] = useState<string>("");
   const [selectedBet, setSelectedBet] = useState<string>("");
-  const [selectedUserId, setSelectedUserId] = useState<string>(
-    users.length > 0 ? users[0].id : ""
-  );
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
   const formatOdds = (odds: number): string => {
     return odds > 0 ? `+${odds}` : odds.toString();
