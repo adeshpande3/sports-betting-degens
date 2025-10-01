@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Build where clause for filtering
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {};
 
     if (userId) {
@@ -72,6 +73,7 @@ export async function GET(request: NextRequest) {
     console.log(`Found ${ledgerEntries.length} ledger entries`);
 
     // Format response data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formattedEntries = ledgerEntries.map((entry: any) => ({
       id: entry.id,
       userId: entry.userId,

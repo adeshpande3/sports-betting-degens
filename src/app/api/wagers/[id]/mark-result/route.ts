@@ -23,10 +23,10 @@ function calculatePayout(stakeCents: number, americanOdds: number): number {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const wagerId = params.id;
+    const { id: wagerId } = await params;
     const body = await request.json();
 
     console.log(`Mark result request for wager ${wagerId}:`, body);

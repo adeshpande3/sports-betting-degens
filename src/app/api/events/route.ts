@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     console.log("GET events request:", { status, leagueId });
 
     // Build where clause for filtering
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {};
 
     if (status) {
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Format response data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formattedEvents = events.map((event: any) => ({
       id: event.id,
       homeTeam: event.homeTeam,
@@ -57,9 +59,11 @@ export async function GET(request: NextRequest) {
         id: event.league.id,
         name: event.league.name,
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       markets: event.markets.map((market: any) => ({
         id: market.id,
         type: market.type,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         lines: market.lines.map((line: any) => ({
           id: line.id,
           selectionKey: line.selectionKey,

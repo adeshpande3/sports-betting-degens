@@ -42,6 +42,7 @@ export interface ApiErrorResponse {
   error: {
     code: string;
     message: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     details?: any;
   };
 }
@@ -112,6 +113,7 @@ export const MARKET_TYPES = {
 // Helper functions
 export function isValidSport(sport: string): boolean {
   return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Object.values(POPULAR_SPORTS).includes(sport as any) ||
     sport === "americanfootball_nfl"
   );

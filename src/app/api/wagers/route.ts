@@ -281,6 +281,7 @@ export async function GET(request: NextRequest) {
     console.log("GET wagers request:", { status });
 
     // Build where clause for filtering
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {};
     if (status) {
       whereClause.status = status.toUpperCase();

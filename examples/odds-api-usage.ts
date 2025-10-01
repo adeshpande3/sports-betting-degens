@@ -81,13 +81,17 @@ async function displayEventsWithOdds() {
 
     if (eventsData.success) {
       console.log("\n🎯 Events with odds:");
+      // Display first 5 events
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       eventsData.events.slice(0, 5).forEach((event: any) => {
         console.log(`\n${event.homeTeam} vs ${event.awayTeam}`);
         console.log(`League: ${event.league.name}`);
         console.log(`Start: ${new Date(event.startsAt).toLocaleString()}`);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         event.markets.forEach((market: any) => {
           console.log(`  ${market.type}:`);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           market.lines.forEach((line: any) => {
             const odds =
               line.price > 0 ? `+${line.price}` : line.price.toString();

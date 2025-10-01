@@ -2,14 +2,9 @@
 
 import { useState, useEffect } from "react";
 import UserSelector from "./UserSelector";
-import BalanceChart from "./BalanceChart";
 import { User, UsersApiResponse } from "@/types/user";
 
-interface UserStatsProps {
-  // Remove userId prop since we'll manage selection internally
-}
-
-export default function UserStats({}: UserStatsProps) {
+export default function UserStats({}) {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);

@@ -79,7 +79,8 @@ function mapSelectionKey(
   return null;
 }
 
-// Helper function to find or create league
+// Helper function to find or create a league
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function findOrCreateLeague(sportTitle: string, tx: any) {
   let league = await tx.league.findFirst({
     where: { name: sportTitle },
@@ -149,6 +150,7 @@ export async function POST(request: NextRequest) {
     console.log(`Received ${oddsData.length} games from Odds API`);
 
     // Process and store the data in a transaction
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await prisma.$transaction(async (tx) => {
       const processedEvents = [];
       const processedLines = [];
@@ -287,6 +289,7 @@ export async function GET(request: NextRequest) {
 
     if (includeStats) {
       // Get stats about recent data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const stats = await prisma.$transaction(async (tx) => {
         const totalEvents = await tx.event.count();
         const totalLines = await tx.line.count();

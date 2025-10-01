@@ -102,6 +102,7 @@ export default function BalanceChart({ user }: BalanceChartProps) {
   const balanceHistory = calculateBalanceHistory(user);
 
   // Custom tooltip component
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -127,7 +128,8 @@ export default function BalanceChart({ user }: BalanceChartProps) {
     return null;
   };
 
-  // Custom dot for bet markers
+  // Custom dot component for data points
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CustomDot = (props: any) => {
     const { cx, cy, payload } = props;
 
