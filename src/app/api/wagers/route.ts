@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/db";
 import { z } from "zod";
-import { Decimal } from "@prisma/client/runtime/library";
 
-// Zod validation schema
+// Zod validation schemas
 const createWagerSchema = z.object({
   lineId: z.string(),
   stakeCents: z.number().int().min(1, "Stake must be at least 1 cent"),
   userId: z.string().optional(),
+});
+
+const deleteWagerSchema = z.object({
+  wagerId: z.string().uuid("Invalid wager ID format"),
 });
 
 export async function POST(request: NextRequest) {
@@ -384,6 +387,186 @@ export async function GET(request: NextRequest) {
         error: {
           code: "INTERNAL_ERROR",
           message: "Failed to fetch wagers",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE method to delete a wager and restore user balance
+export async function DELETE(request: NextRequest) {
+  try {
+    // Parse the request body
+    const body = await request.json();
+
+    console.log("Wager DELETE request received:", body);
+
+    // Get userId from header (for local dev) or request body
+    const headerUserId = request.headers.get("x-user-id");
+    const requestData = {
+      ...body,
+      userId: headerUserId || body.userId,
+    };
+
+    // Validate request data with Zod
+    const validationResult = deleteWagerSchema.safeParse(requestData);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "INVALID_REQUEST",
+            message: "Validation failed",
+            details: validationResult.error.issues,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const { wagerId } = validationResult.data;
+
+    // Use a database transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Fetch the wager with all related data
+      const wager = await tx.wager.findUnique({
+        where: { id: wagerId },
+        include: {
+          user: true,
+          line: {
+            include: {
+              market: {
+                include: {
+                  event: true,
+                },
+              },
+            },
+          },
+          ledgerEntries: true,
+        },
+      });
+
+      if (!wager) {
+        throw new Error("Wager not found");
+      }
+
+      // Only allow deletion of PENDING wagers
+      if (wager.status !== "PENDING") {
+        throw new Error(
+          "Cannot delete wager: Only pending wagers can be deleted"
+        );
+      }
+
+      // Delete the wager's ledger entries first (due to foreign key constraints)
+      await tx.ledgerEntry.deleteMany({
+        where: { wagerId: wager.id },
+      });
+
+      // Create a refund ledger entry to restore the balance
+      await tx.ledgerEntry.create({
+        data: {
+          userId: wager.userId,
+          type: "WAGER_REFUND",
+          amountCents: wager.stakeCents, // Positive amount for credit (money returning to user's account)
+          description: `Wager deleted: ${wager.line.market.event.homeTeam} vs ${wager.line.market.event.awayTeam} - ${wager.line.market.type} ${wager.line.selectionKey}`,
+        },
+      });
+
+      // Restore user balance (add back the stake)
+      await tx.user.update({
+        where: { id: wager.userId },
+        data: {
+          balanceCents: {
+            increment: wager.stakeCents,
+          },
+        },
+      });
+
+      // Delete the wager
+      await tx.wager.delete({
+        where: { id: wagerId },
+      });
+
+      return {
+        deletedWager: {
+          id: wager.id,
+          stakeCents: wager.stakeCents,
+          userId: wager.userId,
+          event: {
+            homeTeam: wager.line.market.event.homeTeam,
+            awayTeam: wager.line.market.event.awayTeam,
+          },
+          market: {
+            type: wager.line.market.type,
+          },
+          selection: wager.line.selectionKey,
+        },
+        refundedAmount: wager.stakeCents,
+      };
+    });
+
+    console.log("Wager deleted:", result.deletedWager.id);
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Wager deleted successfully",
+        deletedWager: result.deletedWager,
+        refundedAmountCents: result.refundedAmount,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error deleting wager:", error);
+
+    // Handle specific database/business logic errors
+    if (error instanceof Error) {
+      const errorMessage = error.message;
+
+      if (errorMessage === "Wager not found") {
+        return NextResponse.json(
+          {
+            error: {
+              code: "WAGER_NOT_FOUND",
+              message: "The specified wager does not exist",
+            },
+          },
+          { status: 404 }
+        );
+      }
+
+      if (errorMessage.startsWith("Unauthorized:")) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "UNAUTHORIZED",
+              message: errorMessage,
+            },
+          },
+          { status: 403 }
+        );
+      }
+
+      if (errorMessage.startsWith("Cannot delete wager:")) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "WAGER_NOT_DELETABLE",
+              message: errorMessage,
+            },
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    return NextResponse.json(
+      {
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Failed to delete wager",
           details: error instanceof Error ? error.message : "Unknown error",
         },
       },

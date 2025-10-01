@@ -198,6 +198,47 @@ export default function Wagers() {
     }
   };
 
+  // Handle cancelling wager (delete wager and refund stake)
+  const handleCancelWager = async (wagerId: string) => {
+    try {
+      // Get the wager to check user ownership
+      const wager = allWagers.find((w) => w.id === wagerId);
+      if (!wager) {
+        throw new Error("Wager not found");
+      }
+
+      const response = await fetch("/api/wagers", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": wager.userId, // Use the wager's userId for authorization
+        },
+        body: JSON.stringify({ wagerId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || "Failed to cancel wager");
+      }
+
+      const data = await response.json();
+      console.log("Wager cancelled successfully:", data);
+
+      // Show success message (optional)
+      if (data.refundedAmountCents) {
+        console.log(
+          `Refunded: $${(data.refundedAmountCents / 100).toFixed(2)}`
+        );
+      }
+
+      // Refetch wagers to update UI
+      await fetchWagers();
+    } catch (err) {
+      console.error("Error cancelling wager:", err);
+      setError(err instanceof Error ? err.message : "Failed to cancel wager");
+    }
+  };
+
   // Filter wagers based on selected user
   const filteredWagers =
     selectedUserId === "ALL"
@@ -286,6 +327,7 @@ export default function Wagers() {
               onMarkLoss={handleMarkLoss}
               onMarkPush={handleMarkPush}
               onMarkVoid={handleMarkVoid}
+              onCancel={handleCancelWager}
             />
           ))}
         </div>

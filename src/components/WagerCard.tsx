@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { Wager } from "@/types/wager";
 
 interface WagerCardProps {
@@ -8,6 +9,7 @@ interface WagerCardProps {
   onMarkLoss?: (wagerId: string) => void;
   onMarkPush?: (wagerId: string) => void;
   onMarkVoid?: (wagerId: string) => void;
+  onCancel?: (wagerId: string) => void;
 }
 
 export default function WagerCard({
@@ -16,7 +18,27 @@ export default function WagerCard({
   onMarkLoss,
   onMarkPush,
   onMarkVoid,
+  onCancel,
 }: WagerCardProps) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   // Helper functions
   const formatCurrency = (cents: number): string => {
     return `$${(cents / 100).toFixed(2)}`;
@@ -92,9 +114,12 @@ export default function WagerCard({
         {/* Left Section - Game Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-lg font-semibold text-gray-900 truncate">
-              {wager.event.awayTeam} @ {wager.event.homeTeam}
-            </h3>
+            <div className="flex-1">
+              <div className="text-lg font-semibold text-gray-900">
+                <div>{wager.event.awayTeam}</div>
+                <div>@ {wager.event.homeTeam}</div>
+              </div>
+            </div>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
                 wager.status
@@ -103,7 +128,6 @@ export default function WagerCard({
               {wager.status}
             </span>
           </div>
-          <p className="text-sm text-gray-600">{wager.event.league}</p>
         </div>
 
         {/* Middle Section - Bet Details */}
@@ -139,26 +163,94 @@ export default function WagerCard({
 
           {/* Action Buttons - Only show for PENDING wagers */}
           {wager.status === "PENDING" &&
-            (onMarkWin || onMarkLoss || onMarkPush || onMarkVoid) && (
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  {onMarkWin && (
+            (onMarkWin ||
+              onMarkLoss ||
+              onMarkPush ||
+              onMarkVoid ||
+              onCancel) && (
+              <div className="flex gap-2">
+                {onMarkWin && (
+                  <button
+                    onClick={() => onMarkWin(wager.id)}
+                    className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors"
+                  >
+                    Win
+                  </button>
+                )}
+                {onMarkLoss && (
+                  <button
+                    onClick={() => onMarkLoss(wager.id)}
+                    className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+                  >
+                    Loss
+                  </button>
+                )}
+                {(onMarkPush || onMarkVoid || onCancel) && (
+                  <div className="relative" ref={dropdownRef}>
                     <button
-                      onClick={() => onMarkWin(wager.id)}
-                      className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="px-3 py-1 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors flex items-center gap-1"
                     >
-                      Win
+                      More
+                      <svg
+                        className={`w-4 h-4 transition-transform ${
+                          isDropdownOpen ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
                     </button>
-                  )}
-                  {onMarkLoss && (
-                    <button
-                      onClick={() => onMarkLoss(wager.id)}
-                      className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
-                    >
-                      Loss
-                    </button>
-                  )}
-                </div>
+
+                    {/* Dropdown Menu */}
+                    {isDropdownOpen && (
+                      <div className="absolute right-0 mt-1 w-24 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                        <div className="py-1">
+                          {onMarkPush && (
+                            <button
+                              onClick={() => {
+                                onMarkPush(wager.id);
+                                setIsDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                              Push
+                            </button>
+                          )}
+                          {onMarkVoid && (
+                            <button
+                              onClick={() => {
+                                onMarkVoid(wager.id);
+                                setIsDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                              Void
+                            </button>
+                          )}
+                          {onCancel && (
+                            <button
+                              onClick={() => {
+                                onCancel(wager.id);
+                                setIsDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
         </div>
