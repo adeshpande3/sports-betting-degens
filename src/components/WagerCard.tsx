@@ -4,9 +4,19 @@ import { Wager } from "@/types/wager";
 
 interface WagerCardProps {
   wager: Wager;
+  onMarkWin?: (wagerId: string) => void;
+  onMarkLoss?: (wagerId: string) => void;
+  onMarkPush?: (wagerId: string) => void;
+  onMarkVoid?: (wagerId: string) => void;
 }
 
-export default function WagerCard({ wager }: WagerCardProps) {
+export default function WagerCard({
+  wager,
+  onMarkWin,
+  onMarkLoss,
+  onMarkPush,
+  onMarkVoid,
+}: WagerCardProps) {
   // Helper functions
   const formatCurrency = (cents: number): string => {
     return `$${(cents / 100).toFixed(2)}`;
@@ -77,82 +87,82 @@ export default function WagerCard({ wager }: WagerCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            {wager.event.awayTeam} @ {wager.event.homeTeam}
-          </h3>
+    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow">
+      <div className="flex items-center justify-between gap-4">
+        {/* Left Section - Game Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 truncate">
+              {wager.event.awayTeam} @ {wager.event.homeTeam}
+            </h3>
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
+                wager.status
+              )}`}
+            >
+              {wager.status}
+            </span>
+          </div>
           <p className="text-sm text-gray-600">{wager.event.league}</p>
         </div>
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-            wager.status
-          )}`}
-        >
-          {wager.status}
-        </span>
-      </div>
 
-      {/* Bet Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <p className="text-sm text-gray-600">Market Type</p>
-          <p className="font-medium">{getMarketTypeDisplay()}</p>
+        {/* Middle Section - Bet Details */}
+        <div className="flex items-center gap-6 text-sm">
+          <div className="text-center">
+            <p className="text-gray-600 mb-1">{getMarketTypeDisplay()}</p>
+            <p className="font-medium">{getSelectionText()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-gray-600 mb-1">Odds</p>
+            <p className="font-medium">{formatOdds(wager.acceptedPrice)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-gray-600 mb-1">Stake</p>
+            <p className="font-medium">{formatCurrency(wager.stakeCents)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-gray-600 mb-1">Potential</p>
+            <p className="font-medium text-green-600">
+              {formatCurrency(wager.potentialPayoutCents)}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-gray-600">Selection</p>
-          <p className="font-medium">{getSelectionText()}</p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-600">Odds</p>
-          <p className="font-medium">{formatOdds(wager.acceptedPrice)}</p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-600">Stake</p>
-          <p className="font-medium">{formatCurrency(wager.stakeCents)}</p>
-        </div>
-      </div>
 
-      {/* Payout Information */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Potential Payout</span>
-          <span className="font-bold text-lg text-green-600">
-            {formatCurrency(wager.potentialPayoutCents)}
-          </span>
-        </div>
-        <div className="flex justify-between items-center mt-1">
-          <span className="text-sm text-gray-600">Potential Profit</span>
-          <span className="font-medium text-green-600">
-            {formatCurrency(wager.potentialPayoutCents - wager.stakeCents)}
-          </span>
-        </div>
-      </div>
+        {/* Right Section - Actions */}
+        <div className="flex items-center gap-3">
+          <div className="text-right text-sm mr-4">
+            <p className="text-gray-600">{wager.user.displayName}</p>
+            <p className="text-gray-500 text-xs">
+              {formatDateTime(wager.placedAt)}
+            </p>
+          </div>
 
-      {/* Event & Timing Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-        <div>
-          <p className="text-gray-600">Game Time</p>
-          <p className="font-medium">{formatDateTime(wager.event.startsAt)}</p>
-        </div>
-        <div>
-          <p className="text-gray-600">Placed At</p>
-          <p className="font-medium">{formatDateTime(wager.placedAt)}</p>
-        </div>
-      </div>
-
-      {/* User Info */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">Bettor</span>
-          <span className="font-medium">{wager.user.displayName}</span>
+          {/* Action Buttons - Only show for PENDING wagers */}
+          {wager.status === "PENDING" &&
+            (onMarkWin || onMarkLoss || onMarkPush || onMarkVoid) && (
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  {onMarkWin && (
+                    <button
+                      onClick={() => onMarkWin(wager.id)}
+                      className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors"
+                    >
+                      Win
+                    </button>
+                  )}
+                  {onMarkLoss && (
+                    <button
+                      onClick={() => onMarkLoss(wager.id)}
+                      className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+                    >
+                      Loss
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
         </div>
       </div>
-
-      {/* Wager ID for reference */}
-      <div className="mt-2 text-xs text-gray-400">ID: {wager.id.slice(-8)}</div>
     </div>
   );
 }

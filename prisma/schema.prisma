@@ -14,6 +14,7 @@ model User {
   // keep balance simple for now; ints in cents
   balanceCents Int     @default(10000) // $100.00 to start
   wagers      Wager[]
+  ledgerEntries LedgerEntry[]
   createdAt   DateTime @default(now())
 }
 
@@ -84,6 +85,7 @@ model Wager {
   acceptedPrice Int
   placedAt      DateTime @default(now())
   status        WagerStatus @default(PENDING)
+  ledgerEntries LedgerEntry[]
 }
 
 enum WagerStatus {
@@ -92,4 +94,24 @@ enum WagerStatus {
   LOST
   PUSH
   VOID
+}
+
+model LedgerEntry {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  wagerId       String?
+  wager         Wager?      @relation(fields: [wagerId], references: [id])
+  type          LedgerType
+  amountCents   Int         // positive for credits, negative for debits
+  description   String
+  createdAt     DateTime    @default(now())
+}
+
+enum LedgerType {
+  WAGER_STAKE     // Debit when placing wager
+  WAGER_PAYOUT    // Credit when winning
+  WAGER_REFUND    // Credit when push/void
+  DEPOSIT         // Credit for adding funds
+  WITHDRAWAL      // Debit for withdrawing funds
 }
