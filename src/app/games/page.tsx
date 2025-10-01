@@ -530,6 +530,7 @@ export default function Events() {
                     >
                       <option value="americanfootball_nfl">NFL</option>
                       <option value="americanfootball_ncaaf">NCAAF</option>
+                      <option value="baseball_mlb">MLB</option>
                     </select>
                   </div>
 
