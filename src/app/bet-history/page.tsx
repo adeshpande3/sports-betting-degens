@@ -214,6 +214,8 @@ export default function Wagers() {
       balanceCents: 0,
       createdAt: new Date().toISOString(),
       _count: { wagers: 0 },
+      ledgerEntries: [],
+      wagers: [],
     },
     ...users,
   ];
@@ -222,8 +224,6 @@ export default function Wagers() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-center mb-4">Wagers</h1>
-
         {/* User Filter */}
         <div className="flex justify-center mb-6">
           <div className="w-full max-w-2xl">

@@ -6,11 +6,18 @@ import { usePathname } from "next/navigation";
 export default function Navbar() {
   const pathname = usePathname();
 
+  if (pathname === "/") {
+    if (typeof window !== "undefined") {
+      window.location.replace("/games");
+    }
+    return null;
+  }
+
   const links = [
-    { href: "/", label: "Home" },
-    { href: "/events", label: "Events" },
-    { href: "/wagers", label: "Wagers" },
-    { href: "/ledger", label: "Ledger" },
+    { href: "/games", label: "Games" },
+    { href: "/bet-history", label: "Bet History" },
+    { href: "/ledger", label: "Financial Ledger" },
+    { href: "/statistics", label: "Statistics" },
     { href: "/admin", label: "Admin" },
   ];
 

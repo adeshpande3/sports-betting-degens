@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import UserSelector from "./UserSelector";
+import BalanceChart from "./BalanceChart";
 import { User, UsersApiResponse } from "@/types/user";
 
 interface UserStatsProps {
@@ -217,9 +218,7 @@ export default function UserStats({}: UserStatsProps) {
         <div className="text-3xl font-bold text-green-600 mb-1">
           {formatCurrency(selectedUser.balanceCents)}
         </div>
-        <div className="text-sm text-gray-500">Available Balance</div>
       </div>
-
       {/* Recent Form */}
       <div>
         <h3 className="font-semibold text-gray-900 mb-2">Recent Form</h3>
