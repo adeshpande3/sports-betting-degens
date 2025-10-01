@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log("GET users request");
 
-    // Fetch all users from database
+    // Fetch all users from database with all wagers and ledger entries
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -16,6 +16,64 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             wagers: true,
+          },
+        },
+        wagers: {
+          select: {
+            id: true,
+            stakeCents: true,
+            acceptedPoint: true,
+            acceptedPrice: true,
+            placedAt: true,
+            status: true,
+            line: {
+              select: {
+                id: true,
+                selectionKey: true,
+                point: true,
+                price: true,
+                market: {
+                  select: {
+                    id: true,
+                    type: true,
+                    event: {
+                      select: {
+                        id: true,
+                        homeTeam: true,
+                        awayTeam: true,
+                        startsAt: true,
+                        status: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            ledgerEntries: {
+              select: {
+                id: true,
+                type: true,
+                amountCents: true,
+                description: true,
+                createdAt: true,
+              },
+            },
+          },
+          orderBy: {
+            placedAt: "desc",
+          },
+        },
+        ledgerEntries: {
+          select: {
+            id: true,
+            type: true,
+            amountCents: true,
+            description: true,
+            createdAt: true,
+            wagerId: true,
+          },
+          orderBy: {
+            createdAt: "desc",
           },
         },
       },
