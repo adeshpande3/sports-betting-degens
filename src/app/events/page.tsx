@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import GameCard, { Game } from "@/components/GameCard";
 import UserStats from "@/components/UserStats";
+import UserSelector from "@/components/UserSelector";
 import { User, UsersApiResponse } from "@/types/user";
 
 // Types for API response
@@ -480,7 +481,7 @@ export default function Events() {
             </button>
           </div>
 
-          <UserStats userId="user-1" />
+          <UserStats />
         </div>
       </div>
     </div>

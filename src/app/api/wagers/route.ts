@@ -118,6 +118,30 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Create ledger entry for the wager stake (debit)
+      const effectiveUserId = userId || "00000000-0000-0000-0000-000000000000";
+      await tx.ledgerEntry.create({
+        data: {
+          userId: effectiveUserId,
+          wagerId: wager.id,
+          type: "WAGER_STAKE",
+          amountCents: -stakeCents, // Negative amount for debit (money leaving user's account)
+          description: `Wager stake for ${line.market.event.homeTeam} vs ${line.market.event.awayTeam} - ${line.market.type} ${line.selectionKey}`,
+        },
+      });
+
+      // Update user balance (subtract the stake)
+      if (userId) {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            balanceCents: {
+              decrement: stakeCents,
+            },
+          },
+        });
+      }
+
       return wager;
     });
 
