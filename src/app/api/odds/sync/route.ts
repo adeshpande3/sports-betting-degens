@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
 
     // Construct Odds API URL
     const oddsApiUrl = new URL(
-      "https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds"
+      `https://api.the-odds-api.com/v4/sports/${sport}/odds`
     );
     oddsApiUrl.searchParams.set("apiKey", ODDS_API_KEY);
     oddsApiUrl.searchParams.set("regions", regions);

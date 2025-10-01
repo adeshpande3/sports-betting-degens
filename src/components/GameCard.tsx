@@ -9,6 +9,7 @@ export interface Game {
   homeTeam: string;
   awayTeam: string;
   startTime: string;
+  leagueName: string;
   spread: {
     home: number;
     away: number;
