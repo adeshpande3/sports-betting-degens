@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       data: {
         email: crypto.randomUUID(), // Don't really care, just gotta be unique
         displayName,
-        balanceCents: balanceCents ?? 10000, // Default to $100.00 if not provided
+        balanceCents: balanceCents ?? 100000, // Default to $1000.00 if not provided
       },
       select: {
         id: true,
